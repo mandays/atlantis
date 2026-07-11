@@ -1,0 +1,28 @@
+# Reference only — this file lives at the ROOT of each target repo that
+# Atlantis manages, not in the atlantis-opentofu-terragrunt project itself.
+
+version: 3
+automerge: false
+parallel_plan: true
+parallel_apply: false
+
+projects:
+  # Plain OpenTofu project: uses Atlantis's built-in plan/apply, no custom
+  # workflow required. terraform_distribution can also be omitted entirely
+  # if ATLANTIS_DEFAULT_TF_DISTRIBUTION=opentofu is already set server-wide.
+  - name: network
+    dir: envs/prod/network
+    terraform_distribution: opentofu
+    terraform_version: 1.9.1
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+
+  # Terragrunt project: routes through the "terragrunt" custom workflow
+  # defined in repos.yaml.
+  - name: prod-app
+    dir: live/prod/app
+    workspace: prod-app
+    workflow: terragrunt
+    autoplan:
+      when_modified: ["*.hcl", "*.tf"]
+    apply_requirements: [approved, mergeable]

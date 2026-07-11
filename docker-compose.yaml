@@ -1,0 +1,41 @@
+services:
+  atlantis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ATLANTIS_VERSION: ${ATLANTIS_VERSION:-v0.42.0}
+        TERRAGRUNT_VERSION: ${TERRAGRUNT_VERSION:-1.1.0}
+    image: mandays/atlantis-opentofu-terragrunt:${TERRAGRUNT_VERSION:-1.1.0}
+    container_name: atlantis
+    restart: unless-stopped
+
+    # Every ATLANTIS_* var here comes straight from .env at runtime.
+    env_file:
+      - .env
+
+    ports:
+      - "${ATLANTIS_PORT:-4141}:4141"
+
+    volumes:
+      # Persists webhook locks, plan cache, and cloned repos across restarts.
+      - atlantis-data:/home/atlantis/.atlantis-data
+      # GitHub App private key
+      - ./app-key.pem:/home/atlantis/.atlantis/app-key.pem:ro
+      # Server-side repo config (workflows, allowlists, apply requirements).
+      - ./repos.yaml:/etc/atlantis/repos.yaml:ro
+      # Optional: mount cloud credentials read-only instead of baking them
+      # into the image or passing them as plaintext env vars.
+      # - ./gcp-sa.json:/home/atlantis/.gcp/sa.json:ro
+      # Optional: SSH deploy key if you clone repos over SSH instead of HTTPS.
+      # - ./ssh:/home/atlantis/.ssh:ro
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4141/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  atlantis-data:
