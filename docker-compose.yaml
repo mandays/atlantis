@@ -13,6 +13,8 @@ services:
     # Every ATLANTIS_* var here comes straight from .env at runtime.
     env_file:
       - .env
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/home/atlantis/.config/gcloud/application_default_credentials.json
 
     ports:
       - "${ATLANTIS_PORT:-4141}:4141"
@@ -24,9 +26,8 @@ services:
       - ./app-key.pem:/home/atlantis/.atlantis/app-key.pem:ro
       # Server-side repo config (workflows, allowlists, apply requirements).
       - ./repos.yaml:/etc/atlantis/repos.yaml:ro
-      # Optional: mount cloud credentials read-only instead of baking them
-      # into the image or passing them as plaintext env vars.
-      # - ./gcp-sa.json:/home/atlantis/.gcp/sa.json:ro
+      # GCP ADC (Workload Identity Federation - no SA keys)
+      - /Users/roman/.config/gcloud/application_default_credentials.json:/home/atlantis/.config/gcloud/application_default_credentials.json:ro
       # Optional: SSH deploy key if you clone repos over SSH instead of HTTPS.
       # - ./ssh:/home/atlantis/.ssh:ro
 

@@ -5,17 +5,10 @@ repos:
   - id: "/.*/"
     allow_custom_workflows: true
     allowed_overrides: [workflow, apply_requirements, delete_source_branch_on_merge]
-    apply_requirements: [approved, mergeable]
-    # Every repo defaults to the terragrunt workflow below unless its own
-    # atlantis.yaml overrides "workflow:" for a specific project.
+    apply_requirements: [approved]
     workflow: terragrunt
 
 workflows:
-  # For repos that use plain OpenTofu with no Terragrunt: Atlantis's
-  # built-in plan/apply steps already work, driven by
-  # ATLANTIS_DEFAULT_TF_DISTRIBUTION=opentofu in .env. No custom workflow
-  # needed for those; this repos.yaml only has to define the Terragrunt path.
-
   terragrunt:
     plan:
       steps:
@@ -23,9 +16,7 @@ workflows:
             name: TF_IN_AUTOMATION
             value: "true"
         - env:
-            # Tells Terragrunt to invoke the "tofu" binary instead of
-            # "terraform" for every OpenTofu/Terraform call it makes.
-            name: TERRAGRUNT_TFPATH
+            name: TG_TF_PATH
             value: "tofu"
         - run: find . -type d -name .terragrunt-cache -prune -exec rm -rf {} +
         - run: terragrunt run -- init -input=false
@@ -35,6 +26,6 @@ workflows:
     apply:
       steps:
         - env:
-            name: TERRAGRUNT_TFPATH
+            name: TG_TF_PATH
             value: "tofu"
         - run: terragrunt run -- apply $PLANFILE
